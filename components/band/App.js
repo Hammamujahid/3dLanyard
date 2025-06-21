@@ -38,6 +38,27 @@ useGLTF.preload(GLTF_PATH);
 useTexture.preload(TEXTURE_PATH);
 
 export default function App() {
+    useEffect(() => {
+    const audio = new Audio("/assets/music.mp3");
+    audio.loop = true;
+    audio.volume = 0.8;
+
+    const playAudio = () => {
+      audio.play().catch(() => {
+        // autoplay diblokir — tunggu interaksi
+        const unlock = () => {
+          audio.play();
+          window.removeEventListener("click", unlock);
+          window.removeEventListener("touchstart", unlock);
+        };
+        window.addEventListener("click", unlock);
+        window.addEventListener("touchstart", unlock);
+      });
+    };
+
+    playAudio();
+  }, []);
+
   return (
     <div className="responsive-wrapper">
       <Canvas camera={{ position: [0, 0, 13], fov: 25 }}>
