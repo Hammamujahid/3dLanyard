@@ -38,25 +38,28 @@ useGLTF.preload(GLTF_PATH);
 useTexture.preload(TEXTURE_PATH);
 
 export default function App() {
-    useEffect(() => {
-    const audio = new Audio("/assets/music.mp3");
-    audio.loop = true;
-    audio.volume = 0.8;
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio("/assets/music.mp3");
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.5;
 
     const playAudio = () => {
-      audio.play().catch(() => {
-        // autoplay diblokir — tunggu interaksi
-        const unlock = () => {
-          audio.play();
-          window.removeEventListener("click", unlock);
-          window.removeEventListener("touchstart", unlock);
-        };
-        window.addEventListener("click", unlock);
-        window.addEventListener("touchstart", unlock);
-      });
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch((err) => {
+          console.log("Audio play failed:", err);
+        });
+      }
     };
 
-    playAudio();
+    window.addEventListener("click", playAudio); // untuk desktop
+    window.addEventListener("touchstart", playAudio); // untuk mobile
+
+    return () => {
+      window.removeEventListener("click", playAudio);
+      window.removeEventListener("touchstart", playAudio);
+    };
   }, []);
 
   return (
