@@ -18,8 +18,17 @@ import {
   useSphericalJoint,
 } from "@react-three/rapier";
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
-import { useDrag } from "@use-gesture/react";
 
+export function BackgroundImage({ url }) {
+  const texture = useTexture(url);
+  const { scene } = useThree();
+
+  useEffect(() => {
+    scene.background = texture;
+  }, [scene, texture]);
+
+  return null;
+}
 extend({ MeshLineGeometry, MeshLineMaterial });
 
 const GLTF_PATH = "/assets/kartu.glb";
@@ -27,13 +36,6 @@ const TEXTURE_PATH = "/assets/bandd1.png";
 
 useGLTF.preload(GLTF_PATH);
 useTexture.preload(TEXTURE_PATH);
-
-export function BackgroundImage({ url }) {
-  const texture = useTexture(url);
-  const { scene } = useThree();
-  useEffect(() => void (scene.background = texture), [scene, texture]);
-  return null;
-}
 
 export default function App() {
   return (
@@ -46,69 +48,116 @@ export default function App() {
         </Physics>
         <Environment blur={0.75}>
           <color attach="background" args={["white"]} />
-          <Lightformer intensity={2} position={[0, -1, 5]} scale={[100, 0.1, 1]} />
-          <Lightformer intensity={3} position={[-1, -1, 1]} scale={[100, 0.1, 1]} />
-          <Lightformer intensity={3} position={[1, 1, 1]} scale={[100, 0.1, 1]} />
-          <Lightformer intensity={10} position={[-10, 0, 14]} scale={[100, 10, 1]} />
+          <Lightformer
+            intensity={2}
+            color="white"
+            position={[0, -1, 5]}
+            rotation={[0, 0, Math.PI / 3]}
+            scale={[100, 0.1, 1]}
+          />
+          <Lightformer
+            intensity={3}
+            color="white"
+            position={[-1, -1, 1]}
+            rotation={[0, 0, Math.PI / 3]}
+            scale={[100, 0.1, 1]}
+          />
+          <Lightformer
+            intensity={3}
+            color="white"
+            position={[1, 1, 1]}
+            rotation={[0, 0, Math.PI / 3]}
+            scale={[100, 0.1, 1]}
+          />
+          <Lightformer
+            intensity={10}
+            color="white"
+            position={[-10, 0, 14]}
+            rotation={[0, Math.PI / 2, Math.PI / 3]}
+            scale={[100, 10, 1]}
+          />
         </Environment>
       </Canvas>
-      <img src="/assets/bethany.gif" className="overlay-image" alt="Header" />
+      <img
+        src="/assets/bethany.gif" // ganti dengan path gambar kamu
+        className="overlay-image"
+        alt="Header"
+      />
     </div>
   );
 }
-
 function Band({ maxSpeed = 50, minSpeed = 10 }) {
-  const band = useRef(), fixed = useRef(), j1 = useRef(), j2 = useRef(), j3 = useRef(), card = useRef();
-  const vec = new THREE.Vector3(), ang = new THREE.Vector3(), rot = new THREE.Vector3(), dir = new THREE.Vector3();
-  const segmentProps = { type: "dynamic", canSleep: true, colliders: false, angularDamping: 4, linearDamping: 4 };
+  const band = useRef(), fixed = useRef(), j1 = useRef(), j2 = useRef(), j3 = useRef(), card = useRef(); // prettier-ignore
+  const vec = new THREE.Vector3(), ang = new THREE.Vector3(), rot = new THREE.Vector3(), dir = new THREE.Vector3(); // prettier-ignore
+  const segmentProps = {
+    type: "dynamic",
+    canSleep: true,
+    colliders: false,
+    angularDamping: 4,
+    linearDamping: 4,
+  };
   const { nodes, materials } = useGLTF(GLTF_PATH);
   const texture = useTexture(TEXTURE_PATH);
-  const cardTexture = useTexture("/assets/bandd2.png");
-  const cardTexture2 = useTexture("/assets/banddd.png");
-  const { size, camera } = useThree();
-  const [dragged, setDragged] = useState(null);
+  const { width, height } = useThree((state) => state.size);
+  const [curve] = useState(
+    () =>
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(),
+        new THREE.Vector3(),
+        new THREE.Vector3(),
+        new THREE.Vector3(),
+      ])
+  );
+  const [dragged, drag] = useState(false);
   const [hovered, hover] = useState(false);
-  const [curve] = useState(() => new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]));
-
-  cardTexture.wrapS = cardTexture.wrapT = THREE.RepeatWrapping;
+  const cardTexture = useTexture("/assets/bandd2.png");
+  cardTexture.wrapS = THREE.RepeatWrapping;
+  cardTexture.wrapT = THREE.RepeatWrapping;
   cardTexture.repeat.set(1.5, 1.4);
   cardTexture.offset.set(0.12, -0.05);
+  const cardTexture2 = useTexture("/assets/banddd.png");
   cardTexture2.offset.set(0.28, 0);
-  cardTexture.flipY = cardTexture2.flipY = false;
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  cardTexture.flipY = false;
+  cardTexture2.flipY = false;
 
-  useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
-  useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]);
-  useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]);
-  useSphericalJoint(j3, card, [[0, 0, 0], [0, 1.45, 0]]);
+  useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]); // prettier-ignore
+  useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]); // prettier-ignore
+  useRopeJoint(j2, j3, [[0, 0, 0], [0, 0, 0], 1]); // prettier-ignore
+  useSphericalJoint(j3, card, [[0, 0, 0], [0, 1.45, 0]]); // prettier-ignore
 
   useEffect(() => {
-    document.body.style.cursor = hovered ? (dragged ? "grabbing" : "grab") : "auto";
+    if (hovered) {
+      document.body.style.cursor = dragged ? "grabbing" : "grab";
+      return () => void (document.body.style.cursor = "auto");
+    }
   }, [hovered, dragged]);
 
-  const bind = useDrag(({ active, xy: [x, y] }) => {
-    if (active) {
-      const ndc = { x: (x / size.width) * 2 - 1, y: -(y / size.height) * 2 + 1 };
-      vec.set(ndc.x, ndc.y, 0.5).unproject(camera);
-      dir.copy(vec).sub(camera.position).normalize();
-      vec.add(dir.multiplyScalar(camera.position.length()));
-      setDragged(vec.clone());
-    } else {
-      setDragged(null);
-    }
-  });
-
-  useFrame((_, delta) => {
-    if (dragged && card.current) {
-      card.current.setNextKinematicTranslation(dragged);
+  useFrame((state, delta) => {
+    if (dragged) {
+      vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
+      dir.copy(vec).sub(state.camera.position).normalize();
+      vec.add(dir.multiplyScalar(state.camera.position.length()));
       [card, j1, j2, j3, fixed].forEach((ref) => ref.current?.wakeUp());
+      card.current?.setNextKinematicTranslation({
+        x: vec.x - dragged.x,
+        y: vec.y - dragged.y,
+        z: vec.z - dragged.z,
+      });
     }
-
     if (fixed.current) {
       [j1, j2].forEach((ref) => {
-        if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
-        const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())));
-        ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)));
+        if (!ref.current.lerped)
+          ref.current.lerped = new THREE.Vector3().copy(
+            ref.current.translation()
+          );
+        const clampedDistance = Math.max(
+          0.1,
+          Math.min(1, ref.current.lerped.distanceTo(ref.current.translation()))
+        );
+        ref.current.lerped.lerp(
+          ref.current.translation(),
+          delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
+        );
       });
       curve.points[0].copy(j3.current.translation());
       curve.points[1].copy(j2.current.lerped);
@@ -121,34 +170,87 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
     }
   });
 
+  curve.curveType = "chordal";
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+
   return (
     <>
       <group position={[0, 4, 0]}>
         <RigidBody ref={fixed} {...segmentProps} type="fixed" />
-        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps}><BallCollider args={[0.1]} /></RigidBody>
-        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps}><BallCollider args={[0.1]} /></RigidBody>
-        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps}><BallCollider args={[0.1]} /></RigidBody>
-        <RigidBody position={[2, 0, 0]} ref={card} {...segmentProps} type={dragged ? "kinematicPosition" : "dynamic"}>
+        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps}>
+          <BallCollider args={[0.1]} />
+        </RigidBody>
+        <RigidBody
+          position={[2, 0, 0]}
+          ref={card}
+          {...segmentProps}
+          type={dragged ? "kinematicPosition" : "dynamic"}
+        >
           <CuboidCollider args={[0.8, 1.125, 0.01]} />
           <group
-            {...bind()}
             scale={2.25}
             position={[0, -1.2, -0.05]}
             onPointerOver={() => hover(true)}
             onPointerOut={() => hover(false)}
+            onPointerUp={(e) => (
+              e.target.releasePointerCapture(e.pointerId), drag(false)
+            )}
+            onPointerDown={(e) => (
+              e.target.setPointerCapture(e.pointerId),
+              drag(
+                new THREE.Vector3()
+                  .copy(e.point)
+                  .sub(vec.copy(card.current.translation()))
+              )
+            )}
           >
             <group>
-              <mesh geometry={nodes.card.geometry}><meshStandardMaterial map={cardTexture} side={THREE.FrontSide} /></mesh>
-              <mesh geometry={nodes.card.geometry} rotation={[0, Math.PI, 0]}><meshStandardMaterial map={cardTexture2} side={THREE.FrontSide} /></mesh>
+              {/* Depan */}
+              <mesh geometry={nodes.card.geometry}>
+                <meshStandardMaterial
+                  map={cardTexture}
+                  side={THREE.FrontSide}
+                />
+              </mesh>
+
+              {/* Belakang */}
+              <mesh
+                geometry={nodes.card.geometry}
+                rotation={[0, Math.PI, 0]} // putar 180 derajat
+              >
+                <meshStandardMaterial
+                  map={cardTexture2}
+                  side={THREE.FrontSide}
+                />
+              </mesh>
             </group>
-            <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
+
+            <mesh
+              geometry={nodes.clip.geometry}
+              material={materials.metal}
+              material-roughness={0.3}
+            />
             <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
           </group>
         </RigidBody>
       </group>
       <mesh ref={band}>
         <meshLineGeometry />
-        <meshLineMaterial color="white" depthTest={false} resolution={[size.width, size.height]} useMap map={texture} repeat={[-4, 1]} lineWidth={1} />
+        <meshLineMaterial
+          color="white"
+          depthTest={false}
+          resolution={[width, height]}
+          useMap
+          map={texture}
+          repeat={[-4, 1]}
+          lineWidth={1}
+        />
       </mesh>
     </>
   );

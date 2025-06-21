@@ -15,6 +15,6 @@
   bottom: 0;
   right: 0;
   width: 200px;
-  z-index: 0;             /* tetap di belakang canvas */
+  z-index: 1;             /* tetap di belakang canvas */
   pointer-events: none;   /* supaya tidak ganggu interaksi */
 }
