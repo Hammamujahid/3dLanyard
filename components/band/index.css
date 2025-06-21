@@ -7,4 +7,14 @@
     align-items: center;
     transform: scale(1);
     transform-origin: center;
+    position: relative;
   }
+
+.overlay-image {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 200px;
+  z-index: 0;             /* tetap di belakang canvas */
+  pointer-events: none;   /* supaya tidak ganggu interaksi */
+}
